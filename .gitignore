@@ -1,0 +1,10 @@
+client_secrets.json
+credentials.json
+mycreds.txt
+mysqldb.py
+venv/
+language_story/
+__pycache__/
+.idea/
+.vscode/
+.env
