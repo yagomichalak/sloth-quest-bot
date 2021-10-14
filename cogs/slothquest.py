@@ -118,12 +118,12 @@ class SlothQuest(*quest_cogs):
         if vc.id != self.vc.id:
             return await ctx.reply(f"**You must be in the {self.vc.mention} Voice Channel to start a Quest!**")
 
+        await self.reset_bot_status()
         self.player = ctx.author
 
         quest_path: str = f"{self.root_path}/Quests"
         # Gets a random language audio
         await ctx.reply("**Quest starting!**")
-        await self.reset_bot_status()
         await self.play_sloth_quest_callback(quest_path, author)
 
     @slash_command(name="play_quest", aliases=['quest'], guild_ids=guild_ids)
@@ -142,12 +142,12 @@ class SlothQuest(*quest_cogs):
         if vc.id != self.vc.id:
             return await ctx.respond(f"**You must be in the {self.vc.mention} Voice Channel to start a Quest!**")
 
+        await self.reset_bot_status()
         self.player = ctx.author
 
         quest_path: str = f"{self.root_path}/Quests"
         # Gets a random language audio
         await ctx.respond("**Quest starting!**")
-        await self.reset_bot_status()
         await self.play_sloth_quest_callback(quest_path, author)
 
 
@@ -298,7 +298,9 @@ class SlothQuest(*quest_cogs):
 
         async def real_check(ctx: commands.Context) -> None:
 
-            if ctx.cog.player.id == ctx.author.id:
+            player = ctx.cog.player
+
+            if player and player.id == ctx.author.id:
                 return True
 
             return NotPlayer()

@@ -88,7 +88,7 @@ class SlothQuestDatabase(commands.Cog):
 
         mycursor, db = await the_database()
         await mycursor.execute("""
-            INSERT INTO QuestPlayer (user_id, last_played_ts)
+            INSERT INTO QuestPlayers (user_id, last_played_ts)
             VALUES (%s, %s)""", (user_id, current_ts))
         await db.commit()
         await mycursor.close()
