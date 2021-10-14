@@ -102,14 +102,21 @@ class SlothQuest(*quest_cogs):
                     await self.download_recursively(drive, download_path, new_category, file['id'])
 
 
-    @commands.command(name="play_sloth_quest", aliases=['quest', 'play_quest', 'pq', 'start_quest'])
+    @commands.command(name="play_sloth_quest", aliases=['quest', 'play_quest', 'pq', 'start_quest', 'story'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def play_sloth_quest_command(self, ctx) -> None:
         """ Starts the Language Quest game. """
 
         author = ctx.author
         if self.player:
-            return await ctx.send(f"**Someone is already playing, {self.player.mention}!**")
+            return await ctx.reply(f"**Someone is already playing, {self.player.mention}!**")
+
+        user_voice: discord.VoiceState = author.voice
+        if not user_voice or not (vc := user_voice.channel):
+            return await ctx.reply(f"**You must be in a Voice Channel for starting a Quest!**")
+
+        if vc.id != self.vc.id:
+            return await ctx.reply(f"**You must be in the {self.vc.mention} Voice Channel to start a Quest!**")
 
         self.player = ctx.author
 
@@ -127,6 +134,13 @@ class SlothQuest(*quest_cogs):
         author = ctx.author
         if self.player:
             return await ctx.respond(f"**Someone is already playing, {self.player.mention}!**")
+
+        user_voice: discord.VoiceState = author.voice
+        if not user_voice or not (vc := user_voice.channel):
+            return await ctx.respond(f"**You must be in a Voice Channel for starting a Quest!**")
+
+        if vc.id != self.vc.id:
+            return await ctx.respond(f"**You must be in the {self.vc.mention} Voice Channel to start a Quest!**")
 
         self.player = ctx.author
 
