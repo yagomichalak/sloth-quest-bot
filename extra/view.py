@@ -16,18 +16,18 @@ class ChosenOptionButton(discord.ui.Button):
 
         await interaction.response.defer()
         self.view.stop()
-        new_story_path: str = f"{self.view.story_path}/{self.label}"
-        await self.view.cog.start_ls_game_callback(new_story_path, self.view.member)
+        new_quest_path: str = f"{self.view.quest_path}/{self.label}"
+        await self.view.cog.start_ls_game_callback(new_quest_path, self.view.member)
 
 class ChooseOptionView(discord.ui.View):
 
-    def __init__(self, cog: commands.Cog, member: discord.Member, story: Dict[str, str], story_path: str):
+    def __init__(self, cog: commands.Cog, member: discord.Member, quest: Dict[str, str], quest_path: str):
         super().__init__(timeout=None)
         self.cog = cog
         self.member = member
-        self.story = story
-        self.story_path = story_path
+        self.quest = quest
+        self.quest_path = quest_path
 
-        for i, option in enumerate(self.story['options']):
+        for i, option in enumerate(self.quest['options']):
             button: discord.ui.Button = ChosenOptionButton(style=discord.ButtonStyle.blurple, label=option, custom_id=f"option_{i+1}")
             self.add_item(button)

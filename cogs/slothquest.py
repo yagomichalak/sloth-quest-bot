@@ -15,8 +15,12 @@ from random import choice
 language_quest_txt_id = int(os.getenv('LANGUAGE_QUEST_TXT_ID'))
 language_quest_vc_id = int(os.getenv('LANGUAGE_QUEST_VC_ID'))
 
-class TheLanguageQuest(commands.Cog):
-    """ Category for TheLanguageQuest game. """
+quest_cogs: List[discord.Cog] = [
+    
+]
+
+class SlothQuest(commands.Cog):
+    """ Category for SlothQuest game. """
 
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
@@ -32,7 +36,7 @@ class TheLanguageQuest(commands.Cog):
 
         self.txt = await self.client.fetch_channel(language_quest_txt_id)
         self.vc = await self.client.fetch_channel(language_quest_vc_id)
-        print("TheLanguageQuest cog is online!")
+        print("SlothQuest cog is online!")
 
 
     # Downloads all content for the Language Jungle game
@@ -285,4 +289,4 @@ class TheLanguageQuest(commands.Cog):
 
 
 def setup(client) -> None:
-    client.add_cog(TheLanguageQuest(client))
+    client.add_cog(SlothQuest(client))
