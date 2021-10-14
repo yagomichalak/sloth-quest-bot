@@ -1,4 +1,5 @@
 import discord
+from discord.app.commands import slash_command
 from discord.ext import commands
 from external_cons import the_drive
 import shutil
@@ -7,6 +8,8 @@ import os
 from extra import utils
 from extra.view import ChooseOptionView
 from extra.customerrors import NotPlayer
+from extra.slothquest.slothquest_database import SlothQuestDatabase
+from extra.slothquest.slothquest_commands import SlothQuestCommands
 
 import asyncio
 from typing import Optional, List, Any, Dict
@@ -14,12 +17,13 @@ from random import choice
 
 language_quest_txt_id = int(os.getenv('LANGUAGE_QUEST_TXT_ID'))
 language_quest_vc_id = int(os.getenv('LANGUAGE_QUEST_VC_ID'))
+guild_ids: List[int] = [int(os.getenv('SERVER_ID'))]
 
 quest_cogs: List[discord.Cog] = [
-    
+    SlothQuestDatabase, SlothQuestCommands
 ]
 
-class SlothQuest(commands.Cog):
+class SlothQuest(*quest_cogs):
     """ Category for SlothQuest game. """
 
     def __init__(self, client: commands.Bot) -> None:
@@ -98,9 +102,9 @@ class SlothQuest(commands.Cog):
                     await self.download_recursively(drive, download_path, new_category, file['id'])
 
 
-    @commands.command(hidden=True, aliases=['quest'])
-    # @commands.is_owner()
-    async def start_ls_game_command(self, ctx) -> None:
+    @commands.command(name="play_sloth_quest", aliases=['quest', 'play_quest', 'pq', 'start_quest'])
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def play_sloth_quest_command(self, ctx) -> None:
         """ Starts the Language Quest game. """
 
         author = ctx.author
@@ -111,11 +115,29 @@ class SlothQuest(commands.Cog):
 
         quest_path: str = f"{self.root_path}/Quests"
         # Gets a random language audio
+        await ctx.reply("**Quest starting!**")
         await self.reset_bot_status()
-        await self.start_ls_game_callback(quest_path, author)
+        await self.play_sloth_quest_callback(quest_path, author)
+
+    @slash_command(name="play_quest", aliases=['quest'], guild_ids=guild_ids)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def play_sloth_quest_slash(self, ctx) -> None:
+        """ Starts the Language Quest game. """
+
+        author = ctx.author
+        if self.player:
+            return await ctx.respond(f"**Someone is already playing, {self.player.mention}!**")
+
+        self.player = ctx.author
+
+        quest_path: str = f"{self.root_path}/Quests"
+        # Gets a random language audio
+        await ctx.respond("**Quest starting!**")
+        await self.reset_bot_status()
+        await self.play_sloth_quest_callback(quest_path, author)
 
 
-    async def start_ls_game_callback(self, quest_path: str, member: discord.Member) -> None:
+    async def play_sloth_quest_callback(self, quest_path: str, member: discord.Member) -> None:
         """ Starts the Language quest game..
         :param quest_path: The path of the current or next audio to be played.
         :param member: The member who started the game. """
@@ -142,9 +164,7 @@ class SlothQuest(commands.Cog):
             if not voice_client.is_playing():
 
                 if os.path.isfile(f"{quest_path}/end.txt"):
-
-                    await self.reset_bot_status()
-                    return await self.txt.send("**The end!**")
+                    return await self.end_game()
 
                 self.round += 1
 
@@ -285,7 +305,19 @@ class SlothQuest(commands.Cog):
         if voice_client and voice_client.is_playing():
             voice_client.stop()
 
-        await ctx.send("**Quest terminated!**")
+        await ctx.send(f"**Quest terminated, {author.mention}!**")
+
+    async def end_game(self) -> None:
+        """ Ends the SlothQuest game. """
+
+        current_ts = await utils.get_timestamp()
+        if await self.get_quest_player(self.player.id):
+            await self.update_player_quests(self.player.id, current_ts)
+        else:
+            await self.insert_quest_player(self.player.id, current_ts)
+
+        await self.reset_bot_status()
+        await self.txt.send("**The end!**")
 
 
 def setup(client) -> None:

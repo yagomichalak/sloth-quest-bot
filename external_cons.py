@@ -1,6 +1,10 @@
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
-from typing import Any
+from typing import Any, List
+
+import asyncio
+import aiomysql
+import os
 
 async def the_drive() -> Any:
     """ Gets the GoogleDrive connection. """
@@ -30,3 +34,20 @@ async def the_drive() -> Any:
 
     drive = GoogleDrive(gauth)
     return drive
+
+
+loop: Any = asyncio.get_event_loop()
+async def the_database() -> List[Any]:
+    """ Gets the database connection. """
+
+    pool: aiomysql.Pool = await aiomysql.create_pool(
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        db=os.getenv('DB_NAME'),
+        loop=loop
+    )
+
+    db = await pool.acquire()
+    mycursor = await db.cursor()
+    return mycursor, db
