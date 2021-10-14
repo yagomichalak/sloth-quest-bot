@@ -6,6 +6,7 @@ import os
 
 from extra import utils
 from extra.view import ChooseOptionView
+from extra.customerrors import NotPlayer
 
 import asyncio
 from typing import Optional, List, Any, Dict
@@ -19,10 +20,11 @@ class TheLanguageQuest(commands.Cog):
 
     def __init__(self, client: commands.Bot) -> None:
         self.client = client
-        self.stories_played: List[str] = []
-        self.root_path: str = './language_story'
+        self.quests_played: List[str] = []
+        self.root_path: str = './sloth_quest'
         self.round: int = 0
-        self.story_name: str = None
+        self.quest_name: str = None
+        self.player: discord.Member = None
 
 
     @commands.Cog.listener()
@@ -36,25 +38,25 @@ class TheLanguageQuest(commands.Cog):
     # Downloads all content for the Language Jungle game
     @commands.command(aliases=['sau'])
     @commands.has_permissions(administrator=True)
-    async def story_audio_update(self, ctx: Optional[commands.Context] = None, rall: str = 'no') -> None:
-        """ Downloads all audios from the GoogleDrive for The Language Story game
+    async def quest_audio_update(self, ctx: Optional[commands.Context] = None, rall: str = 'no') -> None:
+        """ Downloads all audios from the GoogleDrive for The Language quest game
         and stores in the bot's folder.
         :param ctx: The context of the command. [Optional]
         :param rall: Whether the it should remove all folders before downloading files. """
 
         if rall.lower() == 'yes':
             try:
-                shutil.rmtree('./language_story')
+                shutil.rmtree('./sloth_quest')
             except Exception:
                 pass
 
         all_folders = {
-            "Stories": "1MgRUwGW8Iw-ZROmqq0sYHcikwof2VG-3"
+            "Quests": "1MgRUwGW8Iw-ZROmqq0sYHcikwof2VG-3"
         }
-        categories = ['Stories']
+        categories = ['Quests']
         for category in categories:
             try:
-                os.makedirs(f'./language_story/{category}')
+                os.makedirs(f'./sloth_quest/{category}')
                 print(f"{category} folder made!")
             except FileExistsError:
                 pass
@@ -63,7 +65,7 @@ class TheLanguageQuest(commands.Cog):
 
         for folder, folder_id in all_folders.items():
 
-            await self.download_recursively(drive, 'language_story', folder, folder_id)
+            await self.download_recursively(drive, 'sloth_quest', folder, folder_id)
 
         if ctx:
             await ctx.send("**Download update complete!**")
@@ -92,22 +94,26 @@ class TheLanguageQuest(commands.Cog):
                     await self.download_recursively(drive, download_path, new_category, file['id'])
 
 
-    @commands.command(hidden=True, aliases=['story'])
+    @commands.command(hidden=True, aliases=['quest'])
     # @commands.is_owner()
     async def start_ls_game_command(self, ctx) -> None:
-        """ Starts the Language Story game. """
+        """ Starts the Language Quest game. """
 
         author = ctx.author
+        if self.player:
+            return await ctx.send(f"**Someone is already playing, {self.player.mention}!**")
 
-        story_path: str = f"{self.root_path}/Stories"
+        self.player = ctx.author
+
+        quest_path: str = f"{self.root_path}/Quests"
         # Gets a random language audio
         await self.reset_bot_status()
-        await self.start_ls_game_callback(story_path, author)
+        await self.start_ls_game_callback(quest_path, author)
 
 
-    async def start_ls_game_callback(self, story_path: str, member: discord.Member) -> None:
-        """ Starts the Language Story game..
-        :param story_path: The path of the current or next audio to be played.
+    async def start_ls_game_callback(self, quest_path: str, member: discord.Member) -> None:
+        """ Starts the Language quest game..
+        :param quest_path: The path of the current or next audio to be played.
         :param member: The member who started the game. """
 
         server_bot: discord.Member = member.guild.get_member(self.client.user.id)
@@ -131,48 +137,50 @@ class TheLanguageQuest(commands.Cog):
             # Plays the song
             if not voice_client.is_playing():
 
-                if os.path.isfile(f"{story_path}/end.txt"):
+                if os.path.isfile(f"{quest_path}/end.txt"):
 
                     await self.reset_bot_status()
                     return await self.txt.send("**The end!**")
+
                 self.round += 1
 
                 if self.round == 1:
-                    story = await self.get_random_story(story_path, True)
-                    story_path = f"{story_path}/{story['name']}"
-                    text: str = story['text']
+                    quest = await self.get_random_quest(quest_path, True)
+                    quest_path = f"{quest_path}/{quest['name']}"
+                    text: str = quest['text']
                 else:
-                    story = await self.get_random_story(story_path)
-                    text: str = await self.get_new_text(story_path)
+                    quest = await self.get_random_quest(quest_path)
+                    text: str = await self.get_new_text(quest_path)
 
 
                 embed = discord.Embed(
-                    title=f"__`The Story starts now! ({story['name']})`__",
+                    title=f"__`The Quest starts now! ({quest['name']})`__",
                     description=f"Text:\n\n{text}",
                     color=discord.Color.green()
                 )
 
                 files: List[discord.File] = []
 
-                if os.path.isfile(f"{story_path}/image.png"):
+                if os.path.isfile(f"{quest_path}/image.png"):
                     files.append(
-                        discord.File(f"{story_path}/image.png", filename="image.png")
+                        discord.File(f"{quest_path}/image.png", filename="image.png")
                     )
                     embed.set_image(url="attachment://image.png")
 
-                if os.path.isfile(f"{story_path}/thumbnail.png"):
+                if os.path.isfile(f"{quest_path}/thumbnail.png"):
                     files.append(
-                        discord.File(f"{story_path}/thumbnail.png", filename="thumbnail.png")
+                        discord.File(f"{quest_path}/thumbnail.png", filename="thumbnail.png")
                     )
                     embed.set_thumbnail(url="attachment://thumbnail.png")
 
-                view: discord.ui.View = ChooseOptionView(cog=self, member=member, story=story, story_path=story_path)
+                view: discord.ui.View = ChooseOptionView(cog=self, member=member, quest=quest, quest_path=quest_path)
                 msg = await self.txt.send(content="\u200b", embed=embed, view=view, files=files)
-                voice_client.play(discord.FFmpegPCMAudio(f"{story_path}/audio.mp3"), after=lambda e: self.client.loop.create_task(self.enable_answers(msg, view)))
+                voice_client.play(discord.FFmpegPCMAudio(f"{quest_path}/audio.mp3"), after=lambda e: self.client.loop.create_task(self.enable_answers(msg, view)))
 
         else:
             # (to-do) send a message to a specific channel
             await self.txt.send("**The player left the voice channel, so it's game over!**")
+            await self.reset_bot_status()
 
     async def enable_answers(self, message: discord.Message, view: discord.ui.View) -> None:
         """ Enables the buttons from the view, so the user can continue the game. """
@@ -180,21 +188,21 @@ class TheLanguageQuest(commands.Cog):
         await utils.disable_buttons(view, False)
         await message.edit(view=view)
 
-    async def get_new_text(self, story_path: str) -> str:
+    async def get_new_text(self, quest_path: str) -> str:
         """ Gets a new text to display.
-        :param story_path: The path from which to get the text. """
+        :param quest_path: The path from which to get the text. """
 
-        with open(f"{story_path}/text.txt", 'r', encoding="utf-8") as f:
+        with open(f"{quest_path}/text.txt", 'r', encoding="utf-8") as f:
             text: str = f.read()
 
         return text
 
 
-    async def get_random_story(self, folder: str, random: bool = False) -> List[Any]:
-        """ Gets a random story to play.
+    async def get_random_quest(self, folder: str, random: bool = False) -> List[Any]:
+        """ Gets a random Quest to play.
         :param folder: The folder from which to start looking. """
 
-        story: Dict[str, str] = {
+        quest: Dict[str, str] = {
             'name': None,
             'text': None,
             'audio': None,
@@ -205,53 +213,76 @@ class TheLanguageQuest(commands.Cog):
 
             search_path: str = folder
             if random:
-                story_name = choice(os.listdir(f"{self.root_path}/Stories/"))
-                search_path = f"{folder}/{story_name}"
-                if story_name in self.stories_played:
+                quest_name = choice(os.listdir(f"{self.root_path}/Quests/"))
+                search_path = f"{folder}/{quest_name}"
+                if quest_name in self.quests_played:
                     continue
-                self.story_name = story_name
+                self.quest_name = quest_name
                 
-                story['name'] = story_name
-                story['audio'] = f"{folder}/{story_name}/audio.mp3"
-                option_path: str = f"{folder}/{story_name}"
-                story['options'] = [
+                quest['name'] = quest_name
+                quest['audio'] = f"{folder}/{quest_name}/audio.mp3"
+                option_path: str = f"{folder}/{quest_name}"
+                quest['options'] = [
                     file for file in os.listdir(option_path)
                     if os.path.isdir(f"{option_path}/{file}")
                 ]
             
             else:
-                story_name = self.story_name
-                story['name'] = story_name
-                story['audio'] = f"{folder}/audio.mp3"
+                quest_name = self.quest_name
+                quest['name'] = quest_name
+                quest['audio'] = f"{folder}/audio.mp3"
                 option_path: str = f"{folder}/"
-                story['options'] = [
+                quest['options'] = [
                     file for file in os.listdir(option_path)
                     if os.path.isdir(f"{option_path}/{file}")
                 ]
 
             with open(f"{search_path}/text.txt", encoding="utf-8") as f:
                 text = f.read()
-                story['text'] = text
+                quest['text'] = text
 
             break
 
-        return story
-
-
-    async def get_choice_response(self, member: discord.Member, story: Dict[str, str]) -> None:
-        """ Gets a choice response from the user.
-        :param member: The member to get the response from.
-        :param story: The story data. """
-
-        pass
+        return quest
 
     async def reset_bot_status(self) -> None:
         """ Resets the bot's status to its original state. """
 
-        self.stories_played: List[str] = []
-        self.root_path: str = './language_story'
+        self.quests_played: List[str] = []
+        self.root_path: str = './sloth_quest'
         self.round: int = 0
-        self.story_name: str = None
+        self.quest_name: str = None
+        self.player: discord.Member = None
+
+    def check_player() -> bool:
+        """ Checks whether it's the current player that is
+        trying to run the command. """
+
+        async def real_check(ctx: commands.Context) -> None:
+
+            if ctx.cog.player.id == ctx.author.id:
+                return True
+
+            return NotPlayer()
+
+        return commands.check(real_check)
+
+    # Leaves the channel
+    @commands.command()
+    @commands.check_any(check_player(), commands.has_permissions(administrator=True))
+    async def stop(self, ctx: commands.Context) -> None:
+        """ Stops the game. """
+
+        author: discord.Member = ctx.author
+        await self.reset_bot_status()
+
+        guild = ctx.message.guild
+        voice_client: discord.VoiceClient = discord.utils.get(self.client.voice_clients, guild=guild)
+        if voice_client and voice_client.is_playing():
+            voice_client.stop()
+
+        await ctx.send("**Quest terminated!**")
+
 
 def setup(client) -> None:
     client.add_cog(TheLanguageQuest(client))

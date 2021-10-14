@@ -3,7 +3,7 @@ credentials.json
 mycreds.txt
 mysqldb.py
 venv/
-language_story/
+sloth_quest/
 __pycache__/
 .idea/
 .vscode/

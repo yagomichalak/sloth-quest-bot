@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from extra.customerrors import NotPlayer
 from typing import List, Any
 
 guild_ids: List[int] = [int(os.getenv('SERVER_ID'))]
@@ -21,6 +22,9 @@ async def on_command_error(ctx: commands.Context, error: Any):
 
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("You can't do that!")
+
+    elif isinstance(error, NotPlayer):
+        await ctx.send(f"**{ctx.author.mention}, you don't have perms to stop it!**")
 
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send('Please, inform all parameters!')
@@ -45,6 +49,9 @@ async def on_application_command_error(ctx, error) -> None:
 
     if isinstance(error, commands.MissingPermissions):
         await ctx.respond("**You can't do that!**")
+    
+    elif isinstance(error, NotPlayer):
+        await ctx.send(f"**{ctx.author.mention}, you don't have perms to stop it!**")
 
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.respond('**Please, inform all parameters!**')
