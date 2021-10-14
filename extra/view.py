@@ -17,7 +17,7 @@ class ChosenOptionButton(discord.ui.Button):
         await interaction.response.defer()
         self.view.stop()
         new_quest_path: str = f"{self.view.quest_path}/{self.label}"
-        await self.view.cog.start_ls_game_callback(new_quest_path, self.view.member)
+        await self.view.cog.play_sloth_quest_callback(new_quest_path, self.view.member)
 
 class ChooseOptionView(discord.ui.View):
     """ View for choosing an option into the Quest's story. """
