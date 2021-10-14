@@ -328,7 +328,7 @@ class SlothQuest(*quest_cogs):
 
         current_ts = await utils.get_timestamp()
         if await self.get_quest_player(self.player.id):
-            await self.update_player_quests(self.player.id, current_ts)
+            await self.update_player_quests_played(self.player.id, current_ts)
         else:
             await self.insert_quest_player(self.player.id, current_ts)
 
