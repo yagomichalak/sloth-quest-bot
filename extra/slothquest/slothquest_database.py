@@ -14,7 +14,7 @@ class SlothQuestDatabase(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def create_quest_players_table(self, ctx) -> None:
+    async def create_table_quest_players(self, ctx) -> None:
         """ Creates the QuestPlayers table in the database. """
 
         author: discord.Member = ctx.author
@@ -36,7 +36,7 @@ class SlothQuestDatabase(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def drop_quest_players_table(self, ctx) -> None:
+    async def drop_table_quest_players(self, ctx) -> None:
         """ Drops the QuestPlayers table from the database. """
 
         author: discord.Member = ctx.author
@@ -52,7 +52,7 @@ class SlothQuestDatabase(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.has_permissions(administrator=True)
-    async def reset_quest_players_table(self, ctx) -> None:
+    async def reset_table_quest_players(self, ctx) -> None:
         """ Resets the QuestPlayers table in the database. """
 
         author: discord.Member = ctx.author

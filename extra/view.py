@@ -20,6 +20,7 @@ class ChosenOptionButton(discord.ui.Button):
         await self.view.cog.start_ls_game_callback(new_quest_path, self.view.member)
 
 class ChooseOptionView(discord.ui.View):
+    """ View for choosing an option into the Quest's story. """
 
     def __init__(self, cog: commands.Cog, member: discord.Member, quest: Dict[str, str], quest_path: str):
         super().__init__(timeout=None)
@@ -31,3 +32,8 @@ class ChooseOptionView(discord.ui.View):
         for i, option in enumerate(self.quest['options']):
             button: discord.ui.Button = ChosenOptionButton(style=discord.ButtonStyle.blurple, label=option, custom_id=f"option_{i+1}")
             self.add_item(button)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """ Checks whether it's the player who started the game who's clicking on the button option. """
+
+        return self.member.id == interaction.user.id
